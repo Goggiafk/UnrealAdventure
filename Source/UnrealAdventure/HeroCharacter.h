@@ -36,10 +36,27 @@ public:
 	void MoveForward(float Axis);
 	void MoveRight(float Axis);
 
-	bool bDead;
-
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* DashMontage;
+
+	bool bDead;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		float Burning;
+
+	UPROPERTY(EditAnywhere)
+		float Burning_Treshold = 3.0f;
+
+	UFUNCTION()
+		void OnBeingOverlap(class UPrimitiveComponent* HitComp,
+			class AActor* OtherActor, class UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	UPROPERTY(EditAnywhere, Category = "UI_HUD")
+		TSubclassOf<UUserWidget> Hero_Fuel_Widget_Class;
+	UUserWidget* Hero_Fuel_Widget;
+
+	void RestartScene();
 
 protected:
 	// Called when the game starts or when spawned
@@ -48,10 +65,10 @@ protected:
 	void StartRunning();
 	void StopRunning();
 	float WalkSpeed = 600.0f;
-	float RunSpeed = 1500.0f;
+	float RunSpeed = 1000.0f;
 
 	void Dashing();
-	float DashDistance;
+	float DashDistance = 3000.0f;
 
 public:	
 	// Called every frame

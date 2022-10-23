@@ -3,6 +3,11 @@
 
 #include "HeroCharacter.h"
 
+#include "Particles/ParticleEmitter.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 AHeroCharacter::AHeroCharacter()
 {
@@ -17,7 +22,7 @@ AHeroCharacter::AHeroCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-	GetCharacterMovement()->JumpZVelocity = 100.0f;
+	GetCharacterMovement()->JumpZVelocity = 500.0f;
 	GetCharacterMovement()->AirControl = 1.0f;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -31,13 +36,21 @@ AHeroCharacter::AHeroCharacter()
 	FollowCamera->bUsePawnControlRotation = false;
 
 	bDead = false;
+	Burning = 100.0f;
 }
 
 // Called when the game starts or when spawned
 void AHeroCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AHeroCharacter::OnBeingOverlap);
+
+	if(Hero_Fuel_Widget_Class != nullptr)
+	{
+		Hero_Fuel_Widget = CreateWidget(GetWorld(), Hero_Fuel_Widget_Class);
+		Hero_Fuel_Widget->AddToViewport();
+	}
 }
 
 // Called every frame
@@ -45,6 +58,20 @@ void AHeroCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	Burning -= DeltaTime * Burning_Treshold;
+
+	if(Burning <= 0)
+	{
+		if(!bDead)
+		{
+			bDead = true;
+			
+			GetMesh()->SetSimulatePhysics(true);
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(UnusedHandle, this, &AHeroCharacter::RestartScene, 3.0f, false);
+			
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -94,15 +121,18 @@ void AHeroCharacter::MoveRight(float Axis)
 void AHeroCharacter::StartRunning()
 {
 	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+	Burning_Treshold = 10.0f;
 }
 
 void AHeroCharacter::StopRunning()
 {
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	Burning_Treshold = 3.0f;
 }
 
 void AHeroCharacter::Dashing()
 {
+	Burning -= 5.0f;
 	const FVector ForwardDirection = this->GetActorRotation().Vector();
 	LaunchCharacter(ForwardDirection * DashDistance, true, true);
 	if(DashMontage)
@@ -110,5 +140,31 @@ void AHeroCharacter::Dashing()
 		PlayAnimMontage(DashMontage, 1, NAME_None);
 	}
 }
+
+void AHeroCharacter::OnBeingOverlap(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+
+	if(OtherActor->ActorHasTag("Fuel"))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Fueled!"))
+		
+		Burning += 10.0f;
+
+		if(Burning > 100.0f)
+			Burning = 100.0f;
+		
+		OtherActor->Destroy();
+	}
+	
+}
+
+void AHeroCharacter::RestartScene()
+{
+	
+	UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()), false);
+	
+}
+
 
 
