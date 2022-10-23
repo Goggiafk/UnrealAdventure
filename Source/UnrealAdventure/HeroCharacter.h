@@ -7,6 +7,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -37,9 +38,20 @@ public:
 
 	bool bDead;
 
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* DashMontage;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void StartRunning();
+	void StopRunning();
+	float WalkSpeed = 600.0f;
+	float RunSpeed = 1500.0f;
+
+	void Dashing();
+	float DashDistance;
 
 public:	
 	// Called every frame

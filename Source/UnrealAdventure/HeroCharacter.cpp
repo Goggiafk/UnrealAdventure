@@ -17,7 +17,7 @@ AHeroCharacter::AHeroCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-	GetCharacterMovement()->JumpZVelocity = 600.0f;
+	GetCharacterMovement()->JumpZVelocity = 100.0f;
 	GetCharacterMovement()->AirControl = 1.0f;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -51,14 +51,20 @@ void AHeroCharacter::Tick(float DeltaTime)
 void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	
+	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AHeroCharacter::StartRunning);
+	PlayerInputComponent->BindAction("Run", IE_Released, this, &AHeroCharacter::StopRunning);
+
+	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &AHeroCharacter::Dashing);
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &AHeroCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &AHeroCharacter::MoveRight);
+
+	PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
 }
 
 void AHeroCharacter::MoveForward(float Axis)
@@ -82,6 +88,26 @@ void AHeroCharacter::MoveRight(float Axis)
 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(Direction, Axis);
+	}
+}
+
+void AHeroCharacter::StartRunning()
+{
+	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+}
+
+void AHeroCharacter::StopRunning()
+{
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void AHeroCharacter::Dashing()
+{
+	const FVector ForwardDirection = this->GetActorRotation().Vector();
+	LaunchCharacter(ForwardDirection * DashDistance, true, true);
+	if(DashMontage)
+	{
+		PlayAnimMontage(DashMontage, 1, NAME_None);
 	}
 }
 
