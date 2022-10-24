@@ -67,6 +67,7 @@ void AHeroCharacter::Tick(float DeltaTime)
 			bDead = true;
 			
 			GetMesh()->SetSimulatePhysics(true);
+			GetMesh()->SetEnableGravity(false);
 			FTimerHandle UnusedHandle;
 			GetWorldTimerManager().SetTimer(UnusedHandle, this, &AHeroCharacter::RestartScene, 3.0f, false);
 			
